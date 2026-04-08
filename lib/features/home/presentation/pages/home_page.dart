@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/utils/format_helper.dart';
+import '../../../explore/presentation/pages/explore_page.dart'; // Đã sửa từ ../../ thành ../../../
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
@@ -25,101 +26,110 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
+  final List<Widget> _pages = [
+    const HomeContent(),
+    const ExplorePage(),
+    const Center(child: Text('Rewards Page')),
+    const Center(child: Text('Bookmarks Page')),
+    const Center(child: Text('Profile Page')),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      bottomNavigationBar: MainBottomNav(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+      ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
+    );
+  }
+}
+
+class HomeContent extends StatelessWidget {
+  const HomeContent({super.key});
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => sl<HomeBloc>()..add(HomeLoadRequested()),
-      child: Scaffold(
-        bottomNavigationBar: MainBottomNav(
-          currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
-        ),
-        body: SafeArea(
-          child: BlocBuilder<HomeBloc, HomeState>(
-            builder: (context, state) {
-              if (state is HomeInitial || state is HomeLoading) {
-                return const HomeSkeletonWidget();
-              }
+      child: SafeArea(
+        child: BlocBuilder<HomeBloc, HomeState>(
+          builder: (context, state) {
+            if (state is HomeInitial || state is HomeLoading) {
+              return const HomeSkeletonWidget();
+            }
 
-              if (state is HomeError) {
-                return Center(
+            if (state is HomeError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(state.message),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => context.read<HomeBloc>().add(HomeLoadRequested()),
+                      child: const Text('Thử lại'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            if (state is HomeLoaded) {
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<HomeBloc>().add(HomeRefreshRequested());
+                },
+                child: SingleChildScrollView(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(state.message),
+                      const HomeTopNav(),
+                      const HomeSearchBar(),
                       const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => context.read<HomeBloc>().add(HomeLoadRequested()),
-                        child: const Text('Thử lại'),
+                      const GenreChipList(),
+                      const SizedBox(height: 20),
+                      BannerCarousel(banners: state.data.banners),
+                      const SizedBox(height: 24),
+                      SectionHeader(title: 'MỚI CẬP NHẬT', onSeeAllTap: () {}),
+                      const SizedBox(height: 12),
+                      MangaHorizontalList(
+                        mangas: state.data.recentlyUpdated,
+                        subtitleBuilder: (m) => 'Ch.${m.latestChapter} • ${FormatHelper.timeAgo(m.lastUpdated ?? DateTime.now())}',
                       ),
+                      const SizedBox(height: 24),
+                      SectionHeader(title: 'ĐỀ XUẤT CHO BẠN', onSeeAllTap: () {}),
+                      const SizedBox(height: 12),
+                      MangaHorizontalList(
+                        mangas: state.data.recommended,
+                        subtitleBuilder: (m) => 'Ch.${m.latestChapter} • ${m.genre ?? ""}',
+                      ),
+                      const SizedBox(height: 24),
+                      SectionHeader(title: 'BẢNG XẾP HẠNG', onSeeAllTap: () {}),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          children: state.data.rankings
+                              .map((rank) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: RankItem(manga: rank),
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
                     ],
                   ),
-                );
-              }
-
-              if (state is HomeLoaded) {
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    context.read<HomeBloc>().add(HomeRefreshRequested());
-                  },
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const HomeTopNav(),
-                        const HomeSearchBar(),
-                        const SizedBox(height: 16),
-                        const GenreChipList(),
-                        const SizedBox(height: 20),
-                        
-                        // Banner Section
-                        BannerCarousel(banners: state.data.banners),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Recently Updated
-                        SectionHeader(title: 'MỚI CẬP NHẬT', onSeeAllTap: () {}),
-                        const SizedBox(height: 12),
-                        MangaHorizontalList(
-                          mangas: state.data.recentlyUpdated,
-                          subtitleBuilder: (m) => 'Ch.${m.latestChapter} • ${FormatHelper.timeAgo(m.lastUpdated ?? DateTime.now())}',
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Recommended
-                        SectionHeader(title: 'ĐỀ XUẤT CHO BẠN', onSeeAllTap: () {}),
-                        const SizedBox(height: 12),
-                        MangaHorizontalList(
-                          mangas: state.data.recommended,
-                          subtitleBuilder: (m) => 'Ch.${m.latestChapter} • ${m.genre ?? ""}',
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Rankings
-                        SectionHeader(title: 'BẢNG XẾP HẠNG', onSeeAllTap: () {}),
-                        const SizedBox(height: 12),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Column(
-                            children: state.data.rankings
-                                .map((rank) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 10),
-                                      child: RankItem(manga: rank),
-                                    ))
-                                .toList(),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                );
-              }
-              return const SizedBox();
-            },
-          ),
+                ),
+              );
+            }
+            return const SizedBox();
+          },
         ),
       ),
     );

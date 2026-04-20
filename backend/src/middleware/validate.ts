@@ -4,7 +4,8 @@ import { sendError } from '../utils/response';
 
 export const validateBody = (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
   try {
-    schema.parse(req.body);
+    // Quan trọng: Gán lại dữ liệu đã parse (bao gồm defaults và transforms) vào req.body
+    req.body = schema.parse(req.body);
     next();
   } catch (error) {
     if (error instanceof ZodError) {
@@ -17,7 +18,8 @@ export const validateBody = (schema: ZodSchema) => (req: Request, res: Response,
 
 export const validateQuery = (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
   try {
-    schema.parse(req.query);
+    // Quan trọng: Gán lại dữ liệu đã parse vào req.query
+    req.query = schema.parse(req.query);
     next();
   } catch (error) {
     if (error instanceof ZodError) {
@@ -30,7 +32,7 @@ export const validateQuery = (schema: ZodSchema) => (req: Request, res: Response
 
 export const validateParams = (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
   try {
-    schema.parse(req.params);
+    req.params = schema.parse(req.params);
     next();
   } catch (error) {
     if (error instanceof ZodError) {

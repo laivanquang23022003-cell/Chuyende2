@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
 import { Prisma } from '@prisma/client';
+import multer from 'multer';
 
 export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
   let statusCode = err.statusCode || 500;
@@ -12,7 +13,15 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
     logger.error(`[${statusCode}] ${req.method} ${req.url}: ${err.message}\n${err.stack}`);
   }
 
-  // Prisma Errors
+  // 1. Multer Errors (Lỗi upload file)
+  if (err instanceof multer.MulterError) {
+    statusCode = 400;
+    if (err.code === 'LIMIT_FILE_SIZE') message = 'Dung lượng file quá lớn (tối đa 5MB)';
+    if (err.code === 'LIMIT_UNEXPECTED_FILE') message = 'Tên trường (Key) upload không đúng. Vui lòng dùng key: "file"';
+    else message = `Lỗi upload: ${err.message}`;
+  }
+
+  // 2. Prisma Errors
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     switch (err.code) {
       case 'P2002':
@@ -30,7 +39,7 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
     }
   }
 
-  // JWT Errors
+  // 3. JWT Errors
   if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
     message = 'Token không hợp lệ';
@@ -43,6 +52,6 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
   res.status(statusCode).json({
     success: false,
     data: null,
-    message: err.isOperational ? message : 'Lỗi server, vui lòng thử lại',
+    message: (err.isOperational || err instanceof multer.MulterError) ? message : 'Lỗi server, vui lòng thử lại',
   });
 };

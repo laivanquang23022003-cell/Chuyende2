@@ -14,6 +14,8 @@ import { logger } from './utils/logger';
 import { authRouter } from './modules/auth/auth.routes';
 import { mangaRouter } from './modules/manga/manga.routes';
 import { chapterRouter } from './modules/chapter/chapter.routes';
+import { uploadRouter } from './modules/upload/upload.routes';
+import { userRouter } from './modules/user/user.routes';
 
 // Cron Jobs
 import { startFlushViewCount } from './jobs/flushViewCount';
@@ -40,6 +42,8 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api', mangaRouter);
 app.use('/api', chapterRouter);
+app.use('/api', uploadRouter);
+app.use('/api', userRouter);
 
 // 5. 404 Handler
 app.use((req, res) => {
@@ -59,7 +63,6 @@ const startServer = async () => {
     httpServer.listen(port, () => {
       logger.info(`✓ Server running on port ${port} in ${process.env.NODE_ENV} mode`);
 
-      // Start Cron Jobs
       startFlushViewCount();
       startResetDailyTasks();
       logger.info('✓ Cron jobs started');

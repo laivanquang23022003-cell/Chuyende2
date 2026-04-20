@@ -87,8 +87,16 @@ export class ChapterService {
       throw new AppError('Bạn không có quyền thêm chapter cho truyện này', 403);
     }
 
+    // MAP THỦ CÔNG TỪ API (snake_case) SANG PRISMA (camelCase)
     const chapter = await prisma.chapter.create({
-      data: { ...data, mangaId },
+      data: {
+        mangaId: mangaId,
+        chapterNumber: data.chapter_number,
+        title: data.title,
+        isLocked: data.is_locked || false,
+        unlockCost: data.unlock_cost || 0,
+        isPremiumOnly: data.is_premium_only || false,
+      },
     });
 
     await Promise.all([
@@ -112,7 +120,11 @@ export class ChapterService {
 
     await prisma.$transaction([
       prisma.page.createMany({
-        data: pages.map(p => ({ ...p, chapterId })),
+        data: pages.map(p => ({
+          chapterId: chapterId,
+          pageNumber: p.page_number,
+          imageUrl: p.image_url
+        })),
       }),
       prisma.chapter.update({
         where: { id: chapterId },

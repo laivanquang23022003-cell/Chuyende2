@@ -16,6 +16,8 @@ import { mangaRouter } from './modules/manga/manga.routes';
 import { chapterRouter } from './modules/chapter/chapter.routes';
 import { uploadRouter } from './modules/upload/upload.routes';
 import { userRouter } from './modules/user/user.routes';
+import { interactionRouter } from './modules/interaction/interaction.routes';
+import { commentRouter } from './modules/comment/comment.routes';
 
 // Cron Jobs
 import { startFlushViewCount } from './jobs/flushViewCount';
@@ -44,6 +46,8 @@ app.use('/api', mangaRouter);
 app.use('/api', chapterRouter);
 app.use('/api', uploadRouter);
 app.use('/api', userRouter);
+app.use('/api', interactionRouter);
+app.use('/api', commentRouter);
 
 // 5. 404 Handler
 app.use((req, res) => {

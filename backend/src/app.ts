@@ -6,6 +6,7 @@ import { createServer } from 'http';
 import { connectDB } from './config/database';
 import { connectRedis } from './config/redis';
 import { initSocket } from './config/socket';
+import { initFirebase } from './config/firebase';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 import { logger } from './utils/logger';
@@ -18,6 +19,11 @@ import { uploadRouter } from './modules/upload/upload.routes';
 import { userRouter } from './modules/user/user.routes';
 import { interactionRouter } from './modules/interaction/interaction.routes';
 import { commentRouter } from './modules/comment/comment.routes';
+import { socialRouter } from './modules/social/social.routes';
+import { notificationRouter } from './modules/notification/notification.routes';
+import { pointsRouter } from './modules/points/points.routes';
+import { premiumRouter } from './modules/premium/premium.routes';
+import { adminRouter } from './modules/admin/admin.routes';
 
 // Cron Jobs
 import { startFlushViewCount } from './jobs/flushViewCount';
@@ -48,6 +54,11 @@ app.use('/api', uploadRouter);
 app.use('/api', userRouter);
 app.use('/api', interactionRouter);
 app.use('/api', commentRouter);
+app.use('/api', socialRouter);
+app.use('/api/notifications', notificationRouter);
+app.use('/api', pointsRouter);
+app.use('/api/premium', premiumRouter);
+app.use('/api/admin', adminRouter);
 
 // 5. 404 Handler
 app.use((req, res) => {
@@ -62,6 +73,7 @@ const startServer = async () => {
   try {
     await connectDB();
     await connectRedis();
+    initFirebase();
     initSocket(httpServer);
 
     httpServer.listen(port, () => {

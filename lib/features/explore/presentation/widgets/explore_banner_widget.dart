@@ -21,11 +21,12 @@ class _ExploreBannerWidgetState extends State<ExploreBannerWidget> {
   @override
   void initState() {
     super.initState();
-    _startAutoSlide();
+    if (widget.banners.isNotEmpty) _startAutoSlide();
   }
 
   void _startAutoSlide() {
     _timer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (!mounted) return;
       if (_currentPage < widget.banners.length - 1) {
         _currentPage++;
       } else {
@@ -51,6 +52,8 @@ class _ExploreBannerWidgetState extends State<ExploreBannerWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.banners.isEmpty) return const SizedBox();
+
     return Column(
       children: [
         SizedBox(
@@ -62,17 +65,25 @@ class _ExploreBannerWidgetState extends State<ExploreBannerWidget> {
             },
             itemCount: widget.banners.length,
             itemBuilder: (context, index) {
+              final String url = widget.banners[index].imageUrl;
+              // Xử lý URL rỗng để tránh EncodingError
+              final String effectiveUrl = url.isNotEmpty ? url : 'https://via.placeholder.com/300x180.png?text=MangaX';
+
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: CachedNetworkImage(
-                    imageUrl: widget.banners[index].imageUrl,
+                    imageUrl: effectiveUrl,
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Shimmer.fromColors(
                       baseColor: Theme.of(context).colorScheme.surfaceVariant,
                       highlightColor: Theme.of(context).colorScheme.surface,
                       child: Container(color: Colors.white),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      child: const Icon(Icons.broken_image, color: Colors.white),
                     ),
                   ),
                 ),

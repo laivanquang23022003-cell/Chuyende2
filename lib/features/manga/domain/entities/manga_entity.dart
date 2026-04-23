@@ -1,6 +1,7 @@
 class MangaEntity {
   final String id;
   final String title;
+  final String? description; // Bổ sung trường mô tả
   final String? coverUrl;
   final String status; // ongoing/completed/hiatus
   final List<String> genres;
@@ -19,6 +20,7 @@ class MangaEntity {
   MangaEntity({
     required this.id,
     required this.title,
+    this.description,
     this.coverUrl,
     required this.status,
     required this.genres,
@@ -54,6 +56,7 @@ class RankedMangaEntity extends MangaEntity {
   RankedMangaEntity({
     required super.id,
     required super.title,
+    super.description,
     super.coverUrl,
     required super.status,
     required super.genres,

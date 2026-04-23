@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:appmanga/features/auth/presentation/pages/splash_page.dart';
 import 'package:appmanga/features/auth/presentation/pages/login_page.dart';
 import 'package:appmanga/features/auth/presentation/pages/register_page.dart';
 import 'package:appmanga/features/home/presentation/pages/home_page.dart';
+import 'package:appmanga/features/search/presentation/pages/search_page.dart';
+import 'package:appmanga/features/manga_detail/presentation/pages/manga_detail_page.dart';
+import 'package:appmanga/features/manga_detail/presentation/bloc/manga_detail_bloc.dart';
+import 'package:appmanga/features/manga_detail/presentation/bloc/manga_detail_event.dart';
+import 'package:appmanga/features/reader/presentation/pages/reader_page.dart';
+import 'package:appmanga/features/reader/presentation/bloc/reader_bloc.dart';
 import 'package:appmanga/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:appmanga/core/di/injection.dart';
 
@@ -41,6 +48,32 @@ class AppRouter {
       GoRoute(
         path: '/home',
         builder: (context, state) => const HomePage(),
+      ),
+      GoRoute(
+        path: '/search',
+        builder: (context, state) => const SearchPage(),
+      ),
+      GoRoute(
+        path: '/manga/:id',
+        builder: (context, state) {
+          final mangaId = state.pathParameters['id']!;
+          return BlocProvider(
+            create: (_) => sl<MangaDetailBloc>()
+              ..add(MangaDetailLoadRequested(mangaId)),
+            child: MangaDetailPage(mangaId: mangaId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/reader/:chapterId',
+        builder: (context, state) {
+          final chapterId = state.pathParameters['chapterId']!;
+          return BlocProvider(
+            create: (_) => sl<ReaderBloc>()
+              ..add(ReaderLoadRequested(chapterId)),
+            child: ReaderPage(chapterId: chapterId), // Truyền ID vào đây
+          );
+        },
       ),
     ],
   );

@@ -7,14 +7,27 @@ import '../bloc/explore_state.dart';
 import '../widgets/explore_featured_list.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ExplorePage extends StatefulWidget {
+class ExplorePage extends StatelessWidget {
   const ExplorePage({super.key});
 
   @override
-  State<ExplorePage> createState() => _ExplorePageState();
+  Widget build(BuildContext context) {
+    // Cung cấp Bloc ở đây, context của ExploreContent sẽ thấy được Bloc này
+    return BlocProvider(
+      create: (_) => sl<ExploreBloc>()..add(ExploreLoadRequested()),
+      child: const ExploreContent(),
+    );
+  }
 }
 
-class _ExplorePageState extends State<ExplorePage> {
+class ExploreContent extends StatefulWidget {
+  const ExploreContent({super.key});
+
+  @override
+  State<ExploreContent> createState() => _ExploreContentState();
+}
+
+class _ExploreContentState extends State<ExploreContent> {
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -25,6 +38,7 @@ class _ExplorePageState extends State<ExplorePage> {
 
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      // Dùng context của Content, nằm dưới BlocProvider nên sẽ tìm thấy Bloc
       context.read<ExploreBloc>().add(ExploreLoadMore());
     }
   }
@@ -37,79 +51,81 @@ class _ExplorePageState extends State<ExplorePage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<ExploreBloc>()..add(ExploreLoadRequested()),
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: Row(
-            children: [
-              _buildTabItem(context, 'Khám phá', true),
-              const SizedBox(width: 20),
-              _buildTabItem(context, 'Mới nhất', false),
-            ],
-          ),
-          actions: [
-            IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Row(
+          children: [
+            _buildTabItem(context, 'Khám phá', true),
+            const SizedBox(width: 20),
+            _buildTabItem(context, 'Mới nhất', false),
           ],
         ),
-        body: BlocBuilder<ExploreBloc, ExploreState>(
-          builder: (context, state) {
-            if (state is ExploreLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (state is ExploreError) {
-              return Center(
+        actions: [
+          IconButton(
+            onPressed: () {}, // Navigate to SearchPage if needed
+            icon: const Icon(Icons.search),
+          ),
+        ],
+      ),
+      body: BlocBuilder<ExploreBloc, ExploreState>(
+        builder: (context, state) {
+          if (state is ExploreLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state is ExploreError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(state.message),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => context.read<ExploreBloc>().add(ExploreLoadRequested()),
+                    child: const Text('Thử lại'),
+                  ),
+                ],
+              ),
+            );
+          }
+          if (state is ExploreLoaded) {
+            return RefreshIndicator(
+              onRefresh: () async {
+                context.read<ExploreBloc>().add(ExploreRefreshRequested());
+              },
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(state.message),
-                    ElevatedButton(
-                      onPressed: () => context.read<ExploreBloc>().add(ExploreLoadRequested()),
-                      child: const Text('Thử lại'),
-                    ),
-                  ],
-                ),
-              );
-            }
-            if (state is ExploreLoaded) {
-              return RefreshIndicator(
-                onRefresh: () async {
-                  context.read<ExploreBloc>().add(ExploreRefreshRequested());
-                },
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Text(
-                          'Tất cả truyện tranh',
-                          style: GoogleFonts.bebasNeue(
-                            fontSize: 20,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        'Tất cả truyện tranh',
+                        style: GoogleFonts.bebasNeue(
+                          fontSize: 20,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      ExploreFeaturedList(mangas: state.mangas),
-                      if (state.isLoadingMore)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 12),
+                    ExploreFeaturedList(mangas: state.mangas),
+                    if (state.isLoadingMore)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
-              );
-            }
-            return const SizedBox();
-          },
-        ),
+              ),
+            );
+          }
+          return const SizedBox();
+        },
       ),
     );
   }

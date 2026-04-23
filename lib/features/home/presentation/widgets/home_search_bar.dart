@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeSearchBar extends StatelessWidget {
   const HomeSearchBar({super.key});
@@ -10,8 +10,9 @@ class HomeSearchBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: InkWell(
         onTap: () {
-          // Navigate to SearchPage
+          context.push('/search');
         },
+        borderRadius: BorderRadius.circular(12),
         child: Container(
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: 16),

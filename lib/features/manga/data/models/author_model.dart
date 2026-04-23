@@ -9,17 +9,9 @@ class AuthorModel extends AuthorEntity {
 
   factory AuthorModel.fromJson(Map<String, dynamic> json) {
     return AuthorModel(
-      id: json['id'],
-      username: json['username'],
-      avatarUrl: json['avatarUrl'],
+      id: json['id']?.toString() ?? '',
+      username: json['username']?.toString() ?? 'Ẩn danh',
+      avatarUrl: json['avatarUrl']?.toString(),
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'username': username,
-      'avatarUrl': avatarUrl,
-    };
   }
 }

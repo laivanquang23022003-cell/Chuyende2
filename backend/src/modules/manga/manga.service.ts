@@ -141,10 +141,15 @@ export class MangaService {
   }
 
   async createManga(data: CreateMangaInput, authorId: string) {
+    // Map thủ công từ API (snake_case) sang Prisma (camelCase)
     const manga = await prisma.manga.create({
       data: {
-        ...data,
-        authorId,
+        title: data.title,
+        description: data.description,
+        coverUrl: data.cover_url,
+        status: data.status,
+        genres: data.genres,
+        authorId: authorId,
       },
     });
     await redisHelper.del('home_data');
@@ -159,9 +164,18 @@ export class MangaService {
       throw new AppError('Bạn không có quyền sửa truyện này', 403);
     }
 
+    // Map fields cho update
+    const updateData: any = {
+      title: data.title,
+      description: data.description,
+      coverUrl: data.cover_url,
+      status: data.status,
+      genres: data.genres,
+    };
+
     const updatedManga = await prisma.manga.update({
       where: { id: mangaId },
-      data,
+      data: updateData,
     });
     await redisHelper.del('home_data');
     return updatedManga;

@@ -1,71 +1,64 @@
-import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../models/user_model.dart';
+import 'package:appmanga/core/storage/local_storage.dart';
+import 'package:appmanga/core/storage/token_manager.dart';
+import 'package:appmanga/features/auth/data/models/auth_token_model.dart';
+import 'package:appmanga/features/auth/data/models/user_model.dart';
 
 abstract class AuthLocalDataSource {
-  Future<void> saveTokens({required String accessToken, required String refreshToken});
-  Future<void> saveUser(UserModel user);
-  Future<String?> getAccessToken();
-  Future<String?> getRefreshToken();
-  Future<UserModel?> getUser();
+  Future<void> saveAuthData(AuthTokenModel authToken);
   Future<void> clearAuthData();
+  Future<bool> isLoggedIn();
+  Future<String?> getAccessToken();
+  
+  // Các phương thức Onboarding còn thiếu
   Future<bool> hasOnboardingDone();
   Future<void> setOnboardingDone();
 }
 
 class AuthLocalDataSourceImpl implements AuthLocalDataSource {
-  final FlutterSecureStorage secureStorage;
-  final SharedPreferences sharedPreferences;
+  final TokenManager _tokenManager;
+  final LocalStorage _localStorage;
 
-  static const _accessTokenKey = 'access_token';
-  static const _refreshTokenKey = 'refresh_token';
-  static const _userKey = 'user_info';
-  static const _onboardingKey = 'onboarding_done';
-
-  AuthLocalDataSourceImpl({
-    required this.secureStorage,
-    required this.sharedPreferences,
-  });
+  AuthLocalDataSourceImpl(this._tokenManager, this._localStorage);
 
   @override
-  Future<void> saveTokens({required String accessToken, required String refreshToken}) async {
-    await secureStorage.write(key: _accessTokenKey, value: accessToken);
-    await secureStorage.write(key: _refreshTokenKey, value: refreshToken);
-  }
-
-  @override
-  Future<void> saveUser(UserModel user) async {
-    await sharedPreferences.setString(_userKey, jsonEncode(user.toJson()));
-  }
-
-  @override
-  Future<String?> getAccessToken() => secureStorage.read(key: _accessTokenKey);
-
-  @override
-  Future<String?> getRefreshToken() => secureStorage.read(key: _refreshTokenKey);
-
-  @override
-  Future<UserModel?> getUser() async {
-    final userStr = sharedPreferences.getString(_userKey);
-    if (userStr == null) return null;
-    return UserModel.fromJson(jsonDecode(userStr));
+  Future<void> saveAuthData(AuthTokenModel authToken) async {
+    await _tokenManager.saveTokens(
+      accessToken: authToken.accessToken,
+      refreshToken: authToken.refreshToken,
+    );
+    final user = authToken.user as UserModel;
+    await _localStorage.saveUserInfo(
+      userId: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      avatarUrl: user.avatarUrl,
+      pointBalance: user.pointBalance,
+      isPremium: user.isPremium,
+    );
   }
 
   @override
   Future<void> clearAuthData() async {
-    await secureStorage.delete(key: _accessTokenKey);
-    await secureStorage.delete(key: _refreshTokenKey);
-    await sharedPreferences.remove(_userKey);
+    await _tokenManager.clearTokens();
+    await _localStorage.clearUserInfo();
   }
 
   @override
+  Future<bool> isLoggedIn() async {
+    return await _tokenManager.hasTokens();
+  }
+
+  @override
+  Future<String?> getAccessToken() => _tokenManager.getAccessToken();
+
+  @override
   Future<bool> hasOnboardingDone() async {
-    return sharedPreferences.getBool(_onboardingKey) ?? false;
+    return _localStorage.isOnboardingDone();
   }
 
   @override
   Future<void> setOnboardingDone() async {
-    await sharedPreferences.setBool(_onboardingKey, true);
+    await _localStorage.setOnboardingDone();
   }
 }

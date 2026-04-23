@@ -1,4 +1,4 @@
-import '../../domain/entities/user_entity.dart';
+import 'package:appmanga/features/auth/domain/entities/user_entity.dart';
 
 class UserModel extends UserEntity {
   UserModel({
@@ -18,14 +18,14 @@ class UserModel extends UserEntity {
       id: json['id'],
       email: json['email'],
       username: json['username'],
-      avatarUrl: json['avatar_url'],
+      avatarUrl: json['avatarUrl'], // Đổi từ avatar_url sang avatarUrl
       role: json['role'] ?? 'user',
-      pointBalance: json['point_balance'] ?? 0,
-      isPremium: json['is_premium'] ?? false,
-      premiumUntil: json['premium_until'] != null 
-          ? DateTime.parse(json['premium_until']) 
+      pointBalance: json['pointBalance'] ?? 0, // Đổi sang camelCase
+      isPremium: json['isPremium'] ?? false, // Đổi sang camelCase
+      premiumUntil: json['premiumUntil'] != null 
+          ? DateTime.parse(json['premiumUntil']) 
           : null,
-      createdAt: DateTime.parse(json['created_at']),
+      createdAt: DateTime.parse(json['createdAt']), // Đổi sang camelCase
     );
   }
 
@@ -34,12 +34,12 @@ class UserModel extends UserEntity {
       'id': id,
       'email': email,
       'username': username,
-      'avatar_url': avatarUrl,
+      'avatarUrl': avatarUrl,
       'role': role,
-      'point_balance': pointBalance,
-      'is_premium': isPremium,
-      'premium_until': premiumUntil?.toIso8601String(),
-      'created_at': createdAt.toIso8601String(),
+      'pointBalance': pointBalance,
+      'isPremium': isPremium,
+      'premiumUntil': premiumUntil?.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 }

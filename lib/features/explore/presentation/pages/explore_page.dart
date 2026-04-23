@@ -1,16 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/di/injection.dart';
+import 'package:appmanga/core/di/injection.dart';
 import '../bloc/explore_bloc.dart';
 import '../bloc/explore_event.dart';
 import '../bloc/explore_state.dart';
-import '../widgets/explore_banner_widget.dart';
-import '../widgets/explore_category_grid.dart';
 import '../widgets/explore_featured_list.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ExplorePage extends StatelessWidget {
+class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
+
+  @override
+  State<ExplorePage> createState() => _ExplorePageState();
+}
+
+class _ExplorePageState extends State<ExplorePage> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      context.read<ExploreBloc>().add(ExploreLoadMore());
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,16 +45,13 @@ class ExplorePage extends StatelessWidget {
           elevation: 0,
           title: Row(
             children: [
-              _buildTabItem(context, 'Forum', true),
+              _buildTabItem(context, 'Khám phá', true),
               const SizedBox(width: 20),
-              _buildTabItem(context, 'Trò chơi', false),
-              const SizedBox(width: 20),
-              _buildTabItem(context, 'Truyện Ngắn', false),
+              _buildTabItem(context, 'Mới nhất', false),
             ],
           ),
           actions: [
             IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
-            IconButton(onPressed: () {}, icon: const Icon(Icons.mail_outline)),
           ],
         ),
         body: BlocBuilder<ExploreBloc, ExploreState>(
@@ -40,32 +60,50 @@ class ExplorePage extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
             if (state is ExploreError) {
-              return Center(child: Text(state.message));
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(state.message),
+                    ElevatedButton(
+                      onPressed: () => context.read<ExploreBloc>().add(ExploreLoadRequested()),
+                      child: const Text('Thử lại'),
+                    ),
+                  ],
+                ),
+              );
             }
             if (state is ExploreLoaded) {
-              return SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 10),
-                    ExploreBannerWidget(banners: state.data.banners),
-                    const SizedBox(height: 24),
-                    ExploreCategoryGrid(categories: state.data.categories),
-                    const SizedBox(height: 24),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        'Truyện nổi bật',
-                        style: GoogleFonts.bebasNeue(
-                          fontSize: 20,
-                          color: Theme.of(context).colorScheme.onSurface,
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<ExploreBloc>().add(ExploreRefreshRequested());
+                },
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(
+                          'Tất cả truyện tranh',
+                          style: GoogleFonts.bebasNeue(
+                            fontSize: 20,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    ExploreFeaturedList(mangas: state.data.featuredMangas),
-                    const SizedBox(height: 20),
-                  ],
+                      const SizedBox(height: 12),
+                      ExploreFeaturedList(mangas: state.mangas),
+                      if (state.isLoadingMore)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
               );
             }
@@ -79,6 +117,7 @@ class ExplorePage extends StatelessWidget {
   Widget _buildTabItem(BuildContext context, String title, bool isActive) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
@@ -96,7 +135,7 @@ class ExplorePage extends StatelessWidget {
             width: 15,
             height: 3,
             decoration: BoxDecoration(
-              color: Colors.pink,
+              color: Theme.of(context).colorScheme.primary,
               borderRadius: BorderRadius.circular(2),
             ),
           ),

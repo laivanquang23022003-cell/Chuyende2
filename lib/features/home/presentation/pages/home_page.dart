@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/di/injection.dart';
-import '../../../../core/utils/format_helper.dart';
-import '../../../explore/presentation/pages/explore_page.dart'; // Đã sửa từ ../../ thành ../../../
+import 'package:go_router/go_router.dart';
+import 'package:appmanga/core/di/injection.dart';
+import 'package:appmanga/core/utils/format_helper.dart';
+import 'package:appmanga/features/explore/presentation/pages/explore_page.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
@@ -59,7 +60,7 @@ class HomeContent extends StatelessWidget {
       child: SafeArea(
         child: BlocBuilder<HomeBloc, HomeState>(
           builder: (context, state) {
-            if (state is HomeInitial || state is HomeLoading) {
+            if (state is HomeLoading) {
               return const HomeSkeletonWidget();
             }
 
@@ -99,14 +100,14 @@ class HomeContent extends StatelessWidget {
                       const SizedBox(height: 12),
                       MangaHorizontalList(
                         mangas: state.data.recentlyUpdated,
-                        subtitleBuilder: (m) => 'Ch.${m.latestChapter} • ${FormatHelper.timeAgo(m.lastUpdated ?? DateTime.now())}',
+                        subtitleBuilder: (m) => 'Ch.${m.latestChapter ?? 0} • ${FormatHelper.timeAgo(m.updatedAt)}',
                       ),
                       const SizedBox(height: 24),
                       SectionHeader(title: 'ĐỀ XUẤT CHO BẠN', onSeeAllTap: () {}),
                       const SizedBox(height: 12),
                       MangaHorizontalList(
                         mangas: state.data.recommended,
-                        subtitleBuilder: (m) => 'Ch.${m.latestChapter} • ${m.genre ?? ""}',
+                        subtitleBuilder: (m) => 'Ch.${m.latestChapter ?? 0} • ${m.genres.isNotEmpty ? m.genres.first : ""}',
                       ),
                       const SizedBox(height: 24),
                       SectionHeader(title: 'BẢNG XẾP HẠNG', onSeeAllTap: () {}),

@@ -1,10 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:appmanga/features/home/domain/entities/manga_card.dart';
+import 'package:appmanga/features/manga/domain/entities/manga_entity.dart';
 
 class ExploreFeaturedList extends StatelessWidget {
-  final List<MangaCard> mangas;
+  final List<MangaEntity> mangas;
 
   const ExploreFeaturedList({super.key, required this.mangas});
 
@@ -33,7 +33,7 @@ class ExploreFeaturedList extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: CachedNetworkImage(
-                        imageUrl: manga.coverUrl,
+                        imageUrl: manga.coverUrl ?? '',
                         width: double.infinity,
                         height: double.infinity,
                         fit: BoxFit.cover,
@@ -68,7 +68,7 @@ class ExploreFeaturedList extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'Ch.${manga.latestChapter} • ${manga.genre ?? "Action"}',
+                'Ch.${manga.latestChapter ?? 0} • ${manga.genres.isNotEmpty ? manga.genres.first : "Manga"}',
                 style: TextStyle(
                   fontSize: 11,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,

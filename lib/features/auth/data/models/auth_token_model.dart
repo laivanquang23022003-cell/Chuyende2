@@ -1,4 +1,4 @@
-import '../../domain/entities/auth_token.dart';
+import 'package:appmanga/features/auth/domain/entities/auth_token.dart';
 import 'user_model.dart';
 
 class AuthTokenModel extends AuthToken {
@@ -10,8 +10,8 @@ class AuthTokenModel extends AuthToken {
 
   factory AuthTokenModel.fromJson(Map<String, dynamic> json) {
     return AuthTokenModel(
-      accessToken: json['access_token'],
-      refreshToken: json['refresh_token'],
+      accessToken: json['accessToken'], // Đổi từ access_token sang accessToken
+      refreshToken: json['refreshToken'], // Đổi từ refresh_token sang refreshToken
       user: UserModel.fromJson(json['user']),
     );
   }

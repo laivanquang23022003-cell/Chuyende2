@@ -1,9 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../domain/usecases/check_auth_usecase.dart';
-import '../../domain/usecases/login_google_usecase.dart';
-import '../../domain/usecases/login_usecase.dart';
-import '../../domain/usecases/logout_usecase.dart';
-import '../../domain/usecases/register_usecase.dart';
+import 'package:appmanga/features/auth/domain/usecases/login_usecase.dart';
+import 'package:appmanga/features/auth/domain/usecases/register_usecase.dart';
+import 'package:appmanga/features/auth/domain/usecases/login_google_usecase.dart';
+import 'package:appmanga/features/auth/domain/usecases/logout_usecase.dart';
+import 'package:appmanga/features/auth/domain/usecases/check_auth_usecase.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 

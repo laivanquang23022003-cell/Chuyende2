@@ -2,12 +2,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/format_helper.dart';
-import '../../domain/entities/banner_manga.dart';
+import 'package:appmanga/core/theme/app_colors.dart';
+import 'package:appmanga/core/utils/format_helper.dart';
+import 'package:appmanga/features/manga/domain/entities/manga_entity.dart';
 
 class BannerCarousel extends StatefulWidget {
-  final List<BannerManga> banners;
+  final List<MangaEntity> banners;
 
   const BannerCarousel({super.key, required this.banners});
 
@@ -26,6 +26,8 @@ class _BannerCarouselState extends State<BannerCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.banners.isEmpty) return const SizedBox();
+
     return SizedBox(
       height: 160,
       child: PageView.builder(
@@ -42,7 +44,11 @@ class _BannerCarouselState extends State<BannerCarousel> {
     );
   }
 
-  Widget _buildBannerCard(BannerManga banner) {
+  Widget _buildBannerCard(MangaEntity banner) {
+    final String imageUrl = (banner.coverUrl != null && banner.coverUrl!.isNotEmpty) 
+        ? banner.coverUrl! 
+        : 'https://via.placeholder.com/300x160.png?text=MangaX';
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -51,7 +57,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
       child: Stack(
         children: [
           CachedNetworkImage(
-            imageUrl: banner.coverUrl,
+            imageUrl: imageUrl,
             width: double.infinity,
             height: 160,
             fit: BoxFit.cover,
@@ -59,6 +65,10 @@ class _BannerCarouselState extends State<BannerCarousel> {
               baseColor: Theme.of(context).colorScheme.surfaceVariant,
               highlightColor: Theme.of(context).colorScheme.surface,
               child: Container(color: Colors.white),
+            ),
+            errorWidget: (context, url, error) => Container(
+              color: Theme.of(context).colorScheme.surfaceVariant,
+              child: const Icon(Icons.broken_image, color: Colors.white, size: 40),
             ),
           ),
           Container(
@@ -79,7 +89,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                _buildBadge(banner.badgeType),
+                if (banner.badgeType != null) _buildBadge(banner.badgeType!),
                 const SizedBox(height: 6),
                 Text(
                   banner.title,
@@ -91,7 +101,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  'Chapter ${banner.latestChapter} • ${FormatHelper.compactNumber(banner.viewCount)} lượt xem',
+                  'Chapter ${banner.latestChapter ?? 0} • ${FormatHelper.compactNumber(banner.viewCount)} lượt xem',
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.white.withOpacity(0.6),
@@ -109,34 +119,18 @@ class _BannerCarouselState extends State<BannerCarousel> {
     Color color;
     String text;
     switch (type.toLowerCase()) {
-      case 'new':
-        color = const Color(0xFF1A7FE8);
-        text = 'MỚI';
-        break;
-      case 'trending':
-        color = const Color(0xFFD4530E);
-        text = 'TRENDING';
-        break;
+      case 'new': color = const Color(0xFF1A7FE8); text = 'MỚI'; break;
+      case 'trending': color = const Color(0xFFD4530E); text = 'TRENDING'; break;
       case 'hot':
-      default:
-        color = AppColors.red;
-        text = 'HOT';
+      default: color = AppColors.red; text = 'HOT';
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(4),
-      ),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
       child: Text(
         text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1,
-        ),
+        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
       ),
     );
   }

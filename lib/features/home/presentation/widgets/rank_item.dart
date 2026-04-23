@@ -2,17 +2,20 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/format_helper.dart';
-import '../../domain/entities/ranked_manga.dart';
+import 'package:appmanga/core/utils/format_helper.dart';
+import 'package:appmanga/features/manga/domain/entities/manga_entity.dart';
 
 class RankItem extends StatelessWidget {
-  final RankedManga manga;
+  final RankedMangaEntity manga;
 
   const RankItem({super.key, required this.manga});
 
   @override
   Widget build(BuildContext context) {
+    final String imageUrl = (manga.coverUrl != null && manga.coverUrl!.isNotEmpty) 
+        ? manga.coverUrl! 
+        : 'https://via.placeholder.com/44x60.png?text=?';
+
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -39,14 +42,18 @@ class RankItem extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: CachedNetworkImage(
-              imageUrl: manga.coverUrl,
+              imageUrl: imageUrl,
               width: 44,
               height: 60,
               fit: BoxFit.cover,
               placeholder: (context, url) => Shimmer.fromColors(
                 baseColor: Theme.of(context).colorScheme.surfaceVariant,
                 highlightColor: Theme.of(context).colorScheme.surface,
-                child: Container(color: Colors.white),
+                child: Container(color: Colors.white, width: 44, height: 60),
+              ),
+              errorWidget: (context, url, error) => Container(
+                width: 44, height: 60, color: Theme.of(context).colorScheme.surfaceVariant,
+                child: const Icon(Icons.broken_image, size: 20),
               ),
             ),
           ),
@@ -62,7 +69,7 @@ class RankItem extends StatelessWidget {
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${manga.genre} • ${manga.status}',
+                  '${manga.genres.isNotEmpty ? manga.genres.first : ""} • ${manga.status}',
                   style: TextStyle(
                     fontSize: 11,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -109,14 +116,10 @@ class RankItem extends StatelessWidget {
 
   Color _getRankColor(int rank, BuildContext context) {
     switch (rank) {
-      case 1:
-        return const Color(0xFFFFD700);
-      case 2:
-        return const Color(0xFFC0C0C0);
-      case 3:
-        return const Color(0xFFCD7F32);
-      default:
-        return Theme.of(context).colorScheme.onSurfaceVariant;
+      case 1: return const Color(0xFFFFD700);
+      case 2: return const Color(0xFFC0C0C0);
+      case 3: return const Color(0xFFCD7F32);
+      default: return Theme.of(context).colorScheme.onSurfaceVariant;
     }
   }
 }

@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/home_data.dart';
-import '../../domain/entities/manga_card.dart';
+import 'package:appmanga/features/manga/domain/entities/home_data_entity.dart';
 
 abstract class HomeState extends Equatable {
   @override
@@ -12,32 +11,24 @@ class HomeInitial extends HomeState {}
 class HomeLoading extends HomeState {}
 
 class HomeLoaded extends HomeState {
-  final HomeData data;
+  final HomeDataEntity data;
   final String selectedGenre;
-  final List<MangaCard>? filteredManga;
-  final bool isFiltering;
 
   HomeLoaded({
     required this.data,
     this.selectedGenre = 'Tất cả',
-    this.filteredManga,
-    this.isFiltering = false,
   });
 
   @override
-  List<Object?> get props => [data, selectedGenre, filteredManga, isFiltering];
+  List<Object?> get props => [data, selectedGenre];
 
   HomeLoaded copyWith({
-    HomeData? data,
+    HomeDataEntity? data,
     String? selectedGenre,
-    List<MangaCard>? filteredManga,
-    bool? isFiltering,
   }) {
     return HomeLoaded(
       data: data ?? this.data,
       selectedGenre: selectedGenre ?? this.selectedGenre,
-      filteredManga: filteredManga ?? this.filteredManga,
-      isFiltering: isFiltering ?? this.isFiltering,
     );
   }
 }

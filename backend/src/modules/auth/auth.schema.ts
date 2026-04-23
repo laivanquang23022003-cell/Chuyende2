@@ -7,7 +7,8 @@ export const registerSchema = z.object({
     .min(3, 'Username phải có ít nhất 3 ký tự')
     .max(20, 'Username không quá 20 ký tự')
     .regex(/^[a-z0-9_]+$/, 'Username chỉ được chứa chữ thường, số và gạch dưới'),
-  avatar_url: z.string().url('URL ảnh không hợp lệ').optional(),
+  // Thêm .nullable() để chấp nhận giá trị null từ Client
+  avatar_url: z.string().url('URL ảnh không hợp lệ').optional().nullable(),
 });
 
 export const loginSchema = z.object({

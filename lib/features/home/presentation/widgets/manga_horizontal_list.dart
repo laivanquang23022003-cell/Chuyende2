@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../domain/entities/manga_card.dart';
+import 'package:appmanga/features/manga/domain/entities/manga_entity.dart';
 import 'manga_card_item.dart';
 
 class MangaHorizontalList extends StatelessWidget {
-  final List<MangaCard> mangas;
-  final String Function(MangaCard)? subtitleBuilder;
+  final List<MangaEntity> mangas;
+  final String Function(MangaEntity)? subtitleBuilder;
 
   const MangaHorizontalList({
     super.key,
@@ -15,7 +15,7 @@ class MangaHorizontalList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 200, // Adjusted height to fit image + text
+      height: 200,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         scrollDirection: Axis.horizontal,

@@ -15,15 +15,25 @@ abstract class MangaRemoteDataSource {
     String? search,
   });
   Future<MangaDetailModel> getMangaDetail(String id);
-  // Đổi từ Map thành dynamic để chấp nhận cả List và Object
   Future<dynamic> getChapterPages(String id);
   Future<void> likeManga(String mangaId);
   Future<void> unlikeManga(String mangaId);
   Future<void> followManga(String mangaId);
   Future<void> unfollowManga(String mangaId);
-  Future<void> updateReadingHistory(String chapterId, int lastPage);
+  Future<void> updateReadingHistory(String chapterId);
+  Future<List<dynamic>> getReadingHistory({int page = 1, int limit = 20});
+  Future<List<dynamic>> getBookmarks({int page = 1, int limit = 20});
   Future<Map<String, dynamic>> unlockChapter(String chapterId);
   Future<int> getPointBalance();
+  
+  // Comments
+  Future<Map<String, dynamic>> getComments(String mangaId, {String? cursor, int limit = 20});
+  Future<Map<String, dynamic>> createComment(String mangaId, {required String content, String? parentId});
+  Future<List<dynamic>> getCommentReplies(String commentId);
+  Future<void> updateComment(String commentId, String content);
+  Future<void> deleteComment(String commentId);
+  Future<void> likeComment(String commentId);
+  Future<void> unlikeComment(String commentId);
 }
 
 class MangaRemoteDataSourceImpl implements MangaRemoteDataSource {
@@ -69,7 +79,6 @@ class MangaRemoteDataSourceImpl implements MangaRemoteDataSource {
   @override
   Future<dynamic> getChapterPages(String id) async {
     final response = await _dioClient.dio.get('/chapters/$id/pages');
-    // Trả về toàn bộ data (có thể là List hoặc Map)
     return response.data['data'];
   }
 
@@ -94,11 +103,28 @@ class MangaRemoteDataSourceImpl implements MangaRemoteDataSource {
   }
 
   @override
-  Future<void> updateReadingHistory(String chapterId, int lastPage) async {
+  Future<void> updateReadingHistory(String chapterId) async {
     await _dioClient.dio.post(ApiConstants.readingHistory, data: {
       'chapter_id': chapterId,
-      'last_page': lastPage,
     });
+  }
+
+  @override
+  Future<List<dynamic>> getReadingHistory({int page = 1, int limit = 20}) async {
+    final response = await _dioClient.dio.get('${ApiConstants.usersMe}/history', queryParameters: {
+      'page': page,
+      'limit': limit,
+    });
+    return response.data['data'];
+  }
+
+  @override
+  Future<List<dynamic>> getBookmarks({int page = 1, int limit = 20}) async {
+    final response = await _dioClient.dio.get('${ApiConstants.usersMe}/bookmarks', queryParameters: {
+      'page': page,
+      'limit': limit,
+    });
+    return response.data['data'];
   }
 
   @override
@@ -111,5 +137,49 @@ class MangaRemoteDataSourceImpl implements MangaRemoteDataSource {
   Future<int> getPointBalance() async {
     final response = await _dioClient.dio.get(ApiConstants.pointsBalance);
     return response.data['data']['balance'];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getComments(String mangaId, {String? cursor, int limit = 20}) async {
+    final response = await _dioClient.dio.get('${ApiConstants.manga}/$mangaId/comments', queryParameters: {
+      if (cursor != null) 'cursor': cursor,
+      'limit': limit,
+    });
+    return response.data['data'];
+  }
+
+  @override
+  Future<Map<String, dynamic>> createComment(String mangaId, {required String content, String? parentId}) async {
+    final response = await _dioClient.dio.post('${ApiConstants.manga}/$mangaId/comments', data: {
+      'content': content,
+      if (parentId != null) 'parent_id': parentId,
+    });
+    return response.data['data'];
+  }
+
+  @override
+  Future<List<dynamic>> getCommentReplies(String commentId) async {
+    final response = await _dioClient.dio.get('/comments/$commentId/replies');
+    return response.data['data'];
+  }
+
+  @override
+  Future<void> updateComment(String commentId, String content) async {
+    await _dioClient.dio.put('/comments/$commentId', data: {'content': content});
+  }
+
+  @override
+  Future<void> deleteComment(String commentId) async {
+    await _dioClient.dio.delete('/comments/$commentId');
+  }
+
+  @override
+  Future<void> likeComment(String commentId) async {
+    await _dioClient.dio.post('/comments/$commentId/like');
+  }
+
+  @override
+  Future<void> unlikeComment(String commentId) async {
+    await _dioClient.dio.delete('/comments/$commentId/like');
   }
 }

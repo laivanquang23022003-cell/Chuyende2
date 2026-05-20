@@ -4,6 +4,8 @@ import 'package:appmanga/features/auth/domain/usecases/register_usecase.dart';
 import 'package:appmanga/features/auth/domain/usecases/login_google_usecase.dart';
 import 'package:appmanga/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:appmanga/features/auth/domain/usecases/check_auth_usecase.dart';
+import 'package:appmanga/core/socket/socket_client.dart';
+import 'package:appmanga/core/di/injection.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
@@ -33,7 +35,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await loginUseCase(event.email, event.password);
     result.fold(
       (failure) => emit(AuthError(failure.message)),
-      (token) => emit(AuthSuccess(token.user)),
+      (token) {
+        sl<SocketClient>().connect(); // Kết nối Socket
+        emit(AuthSuccess(token.user));
+      },
     );
   }
 
@@ -47,7 +52,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
     result.fold(
       (failure) => emit(AuthError(failure.message)),
-      (token) => emit(AuthSuccess(token.user)),
+      (token) {
+        sl<SocketClient>().connect(); // Kết nối Socket
+        emit(AuthSuccess(token.user));
+      },
     );
   }
 
@@ -56,22 +64,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await loginGoogleUseCase(event.googleIdToken);
     result.fold(
       (failure) => emit(AuthError(failure.message)),
-      (token) => emit(AuthSuccess(token.user)),
+      (token) {
+        sl<SocketClient>().connect(); // Kết nối Socket
+        emit(AuthSuccess(token.user));
+      },
     );
   }
 
   Future<void> _onLogout(AuthLogoutRequested event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     await logoutUseCase();
+    sl<SocketClient>().disconnect(); // Ngắt kết nối Socket
     emit(Unauthenticated());
   }
 
   Future<void> _onCheckAuth(AuthCheckRequested event, Emitter<AuthState> emit) async {
     final isLoggedIn = await checkAuthUseCase();
     if (isLoggedIn) {
-      // In a real app, you might want to fetch user info from local source here
-      // For now, if logged in, we assume we can proceed
-      // emit(AuthSuccess(...)); 
+      sl<SocketClient>().connect(); // Tự động kết nối nếu đã login
+      // Thông tin user sẽ được load lại ở Profile hoặc Home
     } else {
       emit(Unauthenticated());
     }

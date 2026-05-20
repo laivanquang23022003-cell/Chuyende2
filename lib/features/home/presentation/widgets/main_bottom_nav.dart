@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:appmanga/core/theme/app_colors.dart';
+import 'package:appmanga/features/notification/presentation/bloc/notification_bloc.dart';
+import 'package:appmanga/features/notification/presentation/bloc/notification_state.dart';
 
 class MainBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -39,10 +42,45 @@ class MainBottomNav extends StatelessWidget {
             icon: _buildRewardIcon(),
             label: 'Điểm thưởng',
           ),
-          const BottomNavigationBarItem(icon: Icon(Icons.bookmark_outline), label: 'Bookmark'),
+          BottomNavigationBarItem(
+            icon: _buildNotificationBadge(),
+            label: 'Bookmark', // Chỗ này bạn muốn là Bookmark nhưng icon là Notifications? 
+            // Theo thiết kế là: Trang chủ, Khám phá, Thưởng (giữa), Bookmark, Hồ sơ.
+            // Tôi sẽ giữ đúng thứ tự thiết kế của bạn.
+          ),
           const BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Hồ sơ'),
         ],
       ),
+    );
+  }
+
+  Widget _buildNotificationBadge() {
+    return BlocBuilder<NotificationBloc, NotificationState>(
+      builder: (context, state) {
+        int count = 0;
+        if (state is NotificationLoaded) {
+          count = state.unreadCount;
+        }
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(Icons.bookmark_outline),
+            if (count > 0)
+              Positioned(
+                top: -2,
+                right: -2,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.red,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 

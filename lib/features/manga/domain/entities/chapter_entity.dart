@@ -10,7 +10,6 @@ class ChapterEntity {
   final DateTime publishedAt;
   final bool hasAccess;
   final bool isRead;
-  final int? lastPage;
 
   ChapterEntity({
     required this.id,
@@ -24,6 +23,5 @@ class ChapterEntity {
     required this.publishedAt,
     this.hasAccess = true,
     this.isRead = false,
-    this.lastPage,
   });
 }

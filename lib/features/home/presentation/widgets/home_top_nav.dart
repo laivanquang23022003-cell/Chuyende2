@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
+import 'package:appmanga/core/theme/app_colors.dart';
+import 'package:appmanga/core/di/injection.dart';
+import 'package:appmanga/core/storage/local_storage.dart';
+import 'package:appmanga/features/notification/presentation/bloc/notification_bloc.dart';
+import 'package:appmanga/features/notification/presentation/bloc/notification_state.dart';
 
 class HomeTopNav extends StatelessWidget {
   const HomeTopNav({super.key});
@@ -27,7 +33,7 @@ class HomeTopNav extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          _buildIconButton(context, Icons.search, () {}),
+          _buildIconButton(context, Icons.search, () => context.push('/search')),
           const SizedBox(width: 12),
           _buildNotificationButton(context),
           const SizedBox(width: 12),
@@ -54,34 +60,48 @@ class HomeTopNav extends StatelessWidget {
   }
 
   Widget _buildNotificationButton(BuildContext context) {
-    return Stack(
-      children: [
-        _buildIconButton(context, Icons.notifications_none, () {}),
-        Positioned(
-          right: 8,
-          top: 8,
-          child: Container(
-            width: 7,
-            height: 7,
-            decoration: const BoxDecoration(
-              color: AppColors.red,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-      ],
+    return BlocBuilder<NotificationBloc, NotificationState>(
+      builder: (context, state) {
+        int unreadCount = 0;
+        if (state is NotificationLoaded) {
+          unreadCount = state.unreadCount;
+        }
+
+        return Stack(
+          children: [
+            _buildIconButton(context, Icons.notifications_none, () => context.push('/notifications')),
+            if (unreadCount > 0)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.red,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildAvatarButton(BuildContext context) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: AppColors.red,
-        borderRadius: BorderRadius.circular(10),
+    final userId = sl<LocalStorage>().getUserId();
+    return InkWell(
+      onTap: () => context.push('/profile/$userId'),
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppColors.red,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(Icons.person_outline, color: Colors.white, size: 20),
       ),
-      child: const Icon(Icons.person_outline, color: Colors.white, size: 20),
     );
   }
 }

@@ -11,7 +11,6 @@ export const updateProfileSchema = z.object({
 
 export const updateReadingHistorySchema = z.object({
   chapter_id: z.string().uuid('ID chapter không hợp lệ'),
-  last_page: z.number().min(1, 'Số trang phải ít nhất là 1'),
 });
 
 export const userQuerySchema = z.object({

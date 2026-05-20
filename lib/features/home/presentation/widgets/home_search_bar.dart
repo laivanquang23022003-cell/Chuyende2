@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:appmanga/core/theme/app_colors.dart';
 
 class HomeSearchBar extends StatelessWidget {
   const HomeSearchBar({super.key});
@@ -8,34 +9,29 @@ class HomeSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: InkWell(
-        onTap: () {
-          context.push('/search');
-        },
-        borderRadius: BorderRadius.circular(12),
+      child: GestureDetector(
+        // Tap vào search bar → navigate sang SearchPage
+        onTap: () => context.push('/search'),
         child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          height: 46,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceVariant,
+            color: AppColors.darkBg3,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+              color: Colors.white.withOpacity(0.07),
             ),
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.search,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                size: 20,
-              ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
+              Icon(Icons.search,
+                  size: 18, color: AppColors.darkText3),
+              const SizedBox(width: 10),
               Text(
                 'Tìm kiếm tên truyện, tác giả...',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 14,
+                  fontSize: 13,
+                  color: AppColors.darkText3,
                 ),
               ),
             ],

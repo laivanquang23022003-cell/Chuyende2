@@ -47,8 +47,8 @@ export class UserController {
 
   async updateHistory(req: Request, res: Response, next: NextFunction) {
     try {
-      const { chapter_id, last_page } = req.body;
-      const result = await userService.updateReadingHistory(req.user!.userId, chapter_id, last_page);
+      const { chapter_id } = req.body;
+      const result = await userService.updateReadingHistory(req.user!.userId, chapter_id);
       sendSuccess(res, result, 'Cập nhật lịch sử đọc thành công');
     } catch (error) {
       next(error);

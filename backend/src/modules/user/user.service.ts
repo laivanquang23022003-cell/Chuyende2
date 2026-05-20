@@ -115,19 +115,18 @@ export class UserService {
     };
   }
 
-  async updateReadingHistory(userId: string, chapterId: string, lastPage: number) {
+  async updateReadingHistory(userId: string, chapterId: string) {
     const history = await prisma.readingHistory.upsert({
       where: {
         userId_chapterId: { userId, chapterId },
       },
       update: {
-        lastPage,
         readAt: new Date(),
       },
       create: {
         userId,
         chapterId,
-        lastPage,
+        lastPage: 1, // Default value, not used anymore
       },
     });
 

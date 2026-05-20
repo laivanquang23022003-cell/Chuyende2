@@ -1,9 +1,18 @@
+import 'package:appmanga/features/points/presentation/bloc/points_bloc.dart';
+import 'package:appmanga/features/points/presentation/bloc/points_event.dart';
+import 'package:appmanga/features/points/presentation/pages/points_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:appmanga/core/di/injection.dart';
+import 'package:appmanga/core/storage/local_storage.dart';
 import 'package:appmanga/core/utils/format_helper.dart';
 import 'package:appmanga/features/explore/presentation/pages/explore_page.dart';
+import 'package:appmanga/features/bookmarks/presentation/pages/bookmarks_page.dart';
+import 'package:appmanga/features/bookmarks/presentation/bloc/bookmarks_bloc.dart';
+import 'package:appmanga/features/bookmarks/presentation/bloc/bookmarks_event.dart';
+import 'package:appmanga/features/profile/presentation/pages/profile_page.dart';
+import 'package:appmanga/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:appmanga/features/profile/presentation/bloc/profile_event.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
@@ -27,13 +36,31 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const HomeContent(),
-    const ExplorePage(),
-    const Center(child: Text('Rewards Page')),
-    const Center(child: Text('Bookmarks Page')),
-    const Center(child: Text('Profile Page')),
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    final currentUserId = sl<LocalStorage>().getUserId() ?? '';
+    
+    _pages = [
+      const HomeContent(),
+      const ExplorePage(),
+      BlocProvider(
+        create: (context) => sl<PointsBloc>()
+          ..add(PointsLoadRequested()),
+        child: const PointsPage(),
+      ),
+      BlocProvider(
+        create: (context) => sl<BookmarksBloc>()..add(BookmarksLoadRequested()),
+        child: const BookmarksPage(),
+      ),
+      BlocProvider(
+        create: (context) => sl<ProfileBloc>()..add(ProfileLoadRequested(currentUserId)),
+        child: ProfilePage(userId: currentUserId),
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,11 +96,12 @@ class HomeContent extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(state.message),
+                    Text(state.message, style: const TextStyle(color: Colors.white)),
                     const SizedBox(height: 16),
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                       onPressed: () => context.read<HomeBloc>().add(HomeLoadRequested()),
-                      child: const Text('Thử lại'),
+                      child: const Text('Thử lại', style: TextStyle(color: Colors.white)),
                     ),
                   ],
                 ),

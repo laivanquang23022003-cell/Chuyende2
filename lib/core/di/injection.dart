@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:appmanga/core/network/dio_client.dart';
 import 'package:appmanga/core/storage/token_manager.dart';
 import 'package:appmanga/core/storage/local_storage.dart';
+import 'package:appmanga/core/socket/socket_client.dart';
 
 // Features - Auth
 import 'package:appmanga/features/auth/data/datasources/auth_local_datasource.dart';
@@ -19,7 +20,7 @@ import 'package:appmanga/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:appmanga/features/auth/domain/usecases/register_usecase.dart';
 import 'package:appmanga/features/auth/presentation/bloc/auth_bloc.dart';
 
-// Features - Manga (Home, Explore, Search, Detail, Reader)
+// Features - Manga (Home, Explore, Search, Detail, Reader, History, Bookmarks, Comments)
 import 'package:appmanga/features/manga/data/datasources/manga_remote_datasource.dart';
 import 'package:appmanga/features/manga/data/repositories/manga_repository_impl.dart';
 import 'package:appmanga/features/manga/domain/repositories/manga_repository.dart';
@@ -34,6 +35,33 @@ import 'package:appmanga/features/manga/domain/usecases/unfollow_manga_usecase.d
 import 'package:appmanga/features/manga/domain/usecases/update_reading_history_usecase.dart';
 import 'package:appmanga/features/manga/domain/usecases/unlock_chapter_usecase.dart';
 import 'package:appmanga/features/manga/domain/usecases/get_point_balance_usecase.dart';
+import 'package:appmanga/features/manga/domain/usecases/get_reading_history_usecase.dart';
+import 'package:appmanga/features/bookmarks/domain/usecases/get_bookmarks_usecase.dart';
+import 'package:appmanga/features/comment/domain/usecases/get_comments_usecase.dart';
+import 'package:appmanga/features/comment/domain/usecases/create_comment_usecase.dart';
+import 'package:appmanga/features/comment/domain/usecases/get_comment_replies_usecase.dart';
+import 'package:appmanga/features/comment/domain/usecases/update_comment_usecase.dart';
+import 'package:appmanga/features/comment/domain/usecases/delete_comment_usecase.dart';
+import 'package:appmanga/features/comment/domain/usecases/like_comment_usecase.dart';
+import 'package:appmanga/features/comment/domain/usecases/unlike_comment_usecase.dart';
+
+// Features - Profile
+import 'package:appmanga/features/profile/data/datasources/profile_remote_datasource.dart';
+import 'package:appmanga/features/profile/data/repositories/profile_repository_impl.dart';
+import 'package:appmanga/features/profile/domain/repositories/profile_repository.dart';
+import 'package:appmanga/features/profile/domain/usecases/get_user_profile_usecase.dart';
+import 'package:appmanga/features/profile/domain/usecases/update_profile_usecase.dart';
+import 'package:appmanga/features/profile/domain/usecases/follow_user_usecase.dart';
+import 'package:appmanga/features/profile/domain/usecases/unfollow_user_usecase.dart';
+
+// Features - Notification
+import 'package:appmanga/features/notification/data/datasources/notification_remote_datasource.dart';
+import 'package:appmanga/features/notification/data/repositories/notification_repository_impl.dart';
+import 'package:appmanga/features/notification/domain/repositories/notification_repository.dart';
+import 'package:appmanga/features/notification/domain/usecases/get_notifications_usecase.dart';
+import 'package:appmanga/features/notification/domain/usecases/get_unread_count_usecase.dart';
+import 'package:appmanga/features/notification/domain/usecases/mark_read_usecase.dart';
+import 'package:appmanga/features/notification/domain/usecases/mark_all_read_usecase.dart';
 
 // Feature Blocs
 import 'package:appmanga/features/home/presentation/bloc/home_bloc.dart';
@@ -41,6 +69,11 @@ import 'package:appmanga/features/explore/presentation/bloc/explore_bloc.dart';
 import 'package:appmanga/features/search/presentation/bloc/search_bloc.dart';
 import 'package:appmanga/features/manga_detail/presentation/bloc/manga_detail_bloc.dart';
 import 'package:appmanga/features/reader/presentation/bloc/reader_bloc.dart';
+import 'package:appmanga/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:appmanga/features/bookmarks/presentation/bloc/bookmarks_bloc.dart';
+import 'package:appmanga/features/history/presentation/bloc/history_bloc.dart';
+import 'package:appmanga/features/comment/presentation/bloc/comment_bloc.dart';
+import 'package:appmanga/features/notification/presentation/bloc/notification_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -53,6 +86,7 @@ Future<void> init() async {
   sl.registerLazySingleton<LocalStorage>(() => LocalStorage(sl()));
   sl.registerLazySingleton<TokenManager>(() => TokenManager(sl()));
   sl.registerLazySingleton<DioClient>(() => DioClient(sl()));
+  sl.registerLazySingleton<SocketClient>(() => SocketClient(sl()));
 
   // ── Auth ─────────────────────────────
   sl.registerLazySingleton<AuthLocalDataSource>(
@@ -78,7 +112,6 @@ Future<void> init() async {
     () => MangaRepositoryImpl(sl()),
   );
   
-  // UseCases
   sl.registerLazySingleton(() => GetHomeDataUseCase(sl()));
   sl.registerLazySingleton(() => GetMangaListUseCase(sl()));
   sl.registerLazySingleton(() => GetMangaDetailUseCase(sl()));
@@ -90,6 +123,39 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateReadingHistoryUseCase(sl()));
   sl.registerLazySingleton(() => UnlockChapterUseCase(sl()));
   sl.registerLazySingleton(() => GetPointBalanceUseCase(sl()));
+  sl.registerLazySingleton(() => GetReadingHistoryUseCase(sl()));
+  sl.registerLazySingleton(() => GetBookmarksUseCase(sl()));
+  sl.registerLazySingleton(() => GetCommentsUseCase(sl()));
+  sl.registerLazySingleton(() => CreateCommentUseCase(sl()));
+  sl.registerLazySingleton(() => GetCommentRepliesUseCase(sl()));
+  sl.registerLazySingleton(() => UpdateCommentUseCase(sl()));
+  sl.registerLazySingleton(() => DeleteCommentUseCase(sl()));
+  sl.registerLazySingleton(() => LikeCommentUseCase(sl()));
+  sl.registerLazySingleton(() => UnlikeCommentUseCase(sl()));
+
+  // ── Profile ──────────────────
+  sl.registerLazySingleton<ProfileRemoteDataSource>(
+    () => ProfileRemoteDataSourceImpl(sl()),
+  );
+  sl.registerLazySingleton<ProfileRepository>(
+    () => ProfileRepositoryImpl(sl(), sl()),
+  );
+  sl.registerLazySingleton(() => GetUserProfileUseCase(sl()));
+  sl.registerLazySingleton(() => UpdateProfileUseCase(sl()));
+  sl.registerLazySingleton(() => FollowUserUseCase(sl()));
+  sl.registerLazySingleton(() => UnfollowUserUseCase(sl()));
+
+  // ── Notification ──────────────────
+  sl.registerLazySingleton<NotificationRemoteDataSource>(
+    () => NotificationRemoteDataSourceImpl(sl()),
+  );
+  sl.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton(() => GetNotificationsUseCase(sl()));
+  sl.registerLazySingleton(() => GetUnreadCountUseCase(sl()));
+  sl.registerLazySingleton(() => MarkReadUseCase(sl()));
+  sl.registerLazySingleton(() => MarkAllReadUseCase(sl()));
 
   // ── Blocs ─────────────────────────────
   sl.registerFactory(
@@ -102,42 +168,39 @@ Future<void> init() async {
     ),
   );
   
-  sl.registerFactory(
-    () => HomeBloc(
-      getHomeDataUseCase: sl(),
-    ),
-  );
+  sl.registerFactory(() => HomeBloc(getHomeDataUseCase: sl()));
+  sl.registerFactory(() => ExploreBloc(getMangaListUseCase: sl()));
+  sl.registerFactory(() => SearchBloc(getMangaListUseCase: sl()));
+  
+  sl.registerFactory(() => MangaDetailBloc(
+    getMangaDetailUseCase: sl(),
+    likeMangaUseCase: sl(),
+    unlikeMangaUseCase: sl(),
+    followMangaUseCase: sl(),
+    unfollowMangaUseCase: sl(),
+  ));
 
-  sl.registerFactory(
-    () => ExploreBloc(
-      getMangaListUseCase: sl(),
-    ),
-  );
+  sl.registerFactory(() => ReaderBloc(
+    getChapterPagesUseCase: sl(),
+    updateReadingHistoryUseCase: sl(),
+    likeMangaUseCase: sl(),
+    unlikeMangaUseCase: sl(),
+    followMangaUseCase: sl(),
+    unfollowMangaUseCase: sl(),
+  ));
 
-  sl.registerFactory(
-    () => SearchBloc(
-      getMangaListUseCase: sl(),
-    ),
-  );
+  sl.registerFactory(() => ProfileBloc(
+    getUserProfileUseCase: sl(),
+    updateProfileUseCase: sl(),
+    profileRepository: sl(),
+  ));
 
-  sl.registerFactory(
-    () => MangaDetailBloc(
-      getMangaDetailUseCase: sl(),
-      likeMangaUseCase: sl(),
-      unlikeMangaUseCase: sl(),
-      followMangaUseCase: sl(),
-      unfollowMangaUseCase: sl(),
-    ),
-  );
+  sl.registerFactory(() => BookmarksBloc(mangaRepository: sl()));
+  sl.registerFactory(() => HistoryBloc(repository: sl()));
+  sl.registerFactory(() => CommentBloc(mangaRepository: sl()));
 
-  sl.registerFactory(
-    () => ReaderBloc(
-      getChapterPagesUseCase: sl(),
-      updateReadingHistoryUseCase: sl(),
-      likeMangaUseCase: sl(),
-      unlikeMangaUseCase: sl(),
-      followMangaUseCase: sl(),
-      unfollowMangaUseCase: sl(),
-    ),
-  );
+  sl.registerLazySingleton(() => NotificationBloc(
+    repository: sl(),
+    socketClient: sl(),
+  ));
 }

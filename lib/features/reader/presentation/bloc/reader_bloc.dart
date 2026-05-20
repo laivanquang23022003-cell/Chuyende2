@@ -19,8 +19,6 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
   final UnlikeMangaUseCase unlikeMangaUseCase;
   final FollowMangaUseCase followMangaUseCase;
   final UnfollowMangaUseCase unfollowMangaUseCase;
-  
-  Timer? _historyTimer;
 
   ReaderBloc({
     required this.getChapterPagesUseCase,
@@ -45,35 +43,37 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
     final result = await getChapterPagesUseCase(event.chapterId);
     result.fold(
       (failure) => emit(ReaderError(failure.message)),
-      (data) => emit(ReaderLoaded(
-        data: data,
-        currentPage: (data.chapter.lastPage ?? 1) - 1,
-        brightness: state is ReaderLoaded ? (state as ReaderLoaded).brightness : 1.0,
-      )),
+      (data) {
+        emit(ReaderLoaded(
+          data: data,
+          currentPage: 0,
+          brightness: state is ReaderLoaded ? (state as ReaderLoaded).brightness : 1.0,
+        ));
+        // Ghi lịch sử ngay sau khi load thành công (fire-and-forget)
+        updateReadingHistoryUseCase(UpdateReadingHistoryParams(chapterId: event.chapterId));
+      },
     );
   }
 
   void _onPageChanged(ReaderPageChanged event, Emitter<ReaderState> emit) {
-    if (state is! ReaderLoaded) return;
-    final current = state as ReaderLoaded;
-    emit(current.copyWith(currentPage: event.pageIndex));
-
-    _historyTimer?.cancel();
-    _historyTimer = Timer(const Duration(seconds: 2), () {
-      updateReadingHistoryUseCase(current.data.chapter.id, event.pageIndex + 1);
-    });
+    if (state is ReaderLoaded) {
+      final current = state as ReaderLoaded;
+      emit(current.copyWith(currentPage: event.pageIndex));
+    }
   }
 
   void _onUIToggled(ReaderUIToggled event, Emitter<ReaderState> emit) {
-    if (state is! ReaderLoaded) return;
-    final current = state as ReaderLoaded;
-    emit(current.copyWith(showUI: !current.showUI));
+    if (state is ReaderLoaded) {
+      final current = state as ReaderLoaded;
+      emit(current.copyWith(showUI: !current.showUI));
+    }
   }
 
   void _onBrightnessChanged(ReaderBrightnessChanged event, Emitter<ReaderState> emit) {
-    if (state is! ReaderLoaded) return;
-    final current = state as ReaderLoaded;
-    emit(current.copyWith(brightness: event.value));
+    if (state is ReaderLoaded) {
+      final current = state as ReaderLoaded;
+      emit(current.copyWith(brightness: event.value));
+    }
   }
 
   void _onNextChapter(ReaderNextChapter event, Emitter<ReaderState> emit) {
@@ -120,11 +120,5 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
       (failure) => emit(current.copyWith(isFollowed: wasFollowed)),
       (_) => null,
     );
-  }
-
-  @override
-  Future<void> close() {
-    _historyTimer?.cancel();
-    return super.close();
   }
 }

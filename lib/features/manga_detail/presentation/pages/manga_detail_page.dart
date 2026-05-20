@@ -9,6 +9,7 @@ import 'package:appmanga/features/manga/domain/entities/manga_detail_entity.dart
 import 'package:appmanga/shared/widgets/manga_cover_image.dart';
 import 'package:appmanga/features/manga/domain/usecases/get_point_balance_usecase.dart';
 import 'package:appmanga/features/manga/domain/usecases/unlock_chapter_usecase.dart';
+import 'package:appmanga/features/comment/presentation/widgets/comment_sheet.dart';
 import 'package:appmanga/core/di/injection.dart';
 import '../bloc/manga_detail_bloc.dart';
 import '../bloc/manga_detail_event.dart';
@@ -17,6 +18,27 @@ import '../bloc/manga_detail_state.dart';
 class MangaDetailPage extends StatelessWidget {
   final String mangaId;
   const MangaDetailPage({super.key, required this.mangaId});
+
+  void _showCommentSheet(BuildContext context, MangaDetailEntity manga) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.darkBg2,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        builder: (_, controller) => CommentSheet(
+          mangaId: manga.id,
+          scrollController: controller,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -195,6 +217,7 @@ class MangaDetailPage extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context, MangaDetailLoaded state) {
+    final manga = state.manga;
     return Row(
       children: [
         Expanded(
@@ -211,7 +234,19 @@ class MangaDetailPage extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
+        OutlinedButton.icon(
+          onPressed: () => _showCommentSheet(context, manga),
+          icon: const Icon(Icons.comment_outlined, size: 16),
+          label: Text('${manga.commentCount}'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.darkText2,
+            side: const BorderSide(color: AppColors.darkBg3),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          ),
+        ),
+        const SizedBox(width: 8),
         IconButton.filled(
           onPressed: state.isLikeLoading ? null : () => context.read<MangaDetailBloc>().add(MangaDetailLikeToggled()),
           icon: Icon(state.isLiked ? Icons.favorite : Icons.favorite_border),
@@ -228,7 +263,6 @@ class MangaDetailPage extends StatelessWidget {
   Widget _buildReadButton(BuildContext context, MangaDetailEntity manga) {
     if (manga.chapters.isEmpty) return const SizedBox();
 
-    // Tìm chương đầu tiên (số nhỏ nhất)
     final firstChapter = (List<ChapterEntity>.from(manga.chapters)..sort((a, b) => a.chapterNumber.compareTo(b.chapterNumber))).first;
 
     return ElevatedButton(
@@ -244,7 +278,6 @@ class MangaDetailPage extends StatelessWidget {
   }
 
   Widget _buildChapterList(BuildContext context, List<ChapterEntity> chapters) {
-    // Sắp xếp chương mới nhất lên đầu
     final sortedChapters = List<ChapterEntity>.from(chapters)..sort((a, b) => b.chapterNumber.compareTo(a.chapterNumber));
 
     return SliverList(

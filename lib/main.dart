@@ -5,6 +5,8 @@ import 'package:appmanga/core/theme/app_theme.dart';
 import 'package:appmanga/core/router/app_router.dart';
 import 'package:appmanga/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:appmanga/features/auth/presentation/bloc/auth_event.dart';
+import 'package:appmanga/features/notification/presentation/bloc/notification_bloc.dart';
+import 'package:appmanga/features/notification/presentation/bloc/notification_event.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,9 +19,15 @@ class MangaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Cung cấp AuthBloc ở cấp độ toàn ứng dụng
-    return BlocProvider(
-      create: (context) => di.sl<AuthBloc>()..add(AuthCheckRequested()),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => di.sl<AuthBloc>()..add(AuthCheckRequested()),
+        ),
+        BlocProvider(
+          create: (context) => di.sl<NotificationBloc>()..add(NotificationLoadRequested()),
+        ),
+      ],
       child: MaterialApp.router(
         title: 'MangaX',
         debugShowCheckedModeBanner: false,

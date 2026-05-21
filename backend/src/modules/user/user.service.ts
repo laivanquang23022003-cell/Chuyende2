@@ -170,23 +170,55 @@ export class UserService {
     };
   }
 
-  async getUserMangas(userId: string, query: UserQueryInput) {
-    const { page, limit } = query;
-    const skip = (page - 1) * limit;
+  // Sửa lại thành
+  async getUserMangas(userId: string, query: any) {
+    const page  = Number(query.page)  || 1
+    const limit = Number(query.limit) || 20
+    const skip  = (page - 1) * limit
 
     const [data, total] = await Promise.all([
       prisma.manga.findMany({
-        where: { authorId: userId },
-        skip,
-        take: limit,
+        where  : { authorId: userId },
+        take   : limit,                 // ← sửa: dùng limit thật
+        skip   : skip,                  // ← thêm skip
         orderBy: { createdAt: 'desc' },
+        select : {
+          id          : true,
+          title       : true,
+          coverUrl    : true,
+          status      : true,
+          genres      : true,
+          viewCount   : true,
+          likeCount   : true,
+          updatedAt   : true,
+          _count      : {
+            select: { chapters: true }  // đếm số chapter
+          },
+        },
       }),
-      prisma.manga.count({ where: { authorId: userId } }),
-    ]);
+      prisma.manga.count({
+        where: { authorId: userId },
+      }),
+    ])
 
     return {
-      data,
-      pagination: { page, limit, total },
-    };
+      data: data.map(m => ({
+        id           : m.id,
+        title        : m.title,
+        cover_url    : m.coverUrl,
+        status       : m.status,
+        genres       : m.genres,
+        view_count   : m.viewCount,
+        like_count   : m.likeCount,
+        chapter_count: m._count.chapters,
+        updated_at   : m.updatedAt,
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    }
   }
 }

@@ -1,4 +1,14 @@
 import 'package:equatable/equatable.dart';
+// Thêm 2 event mới
+class ProfileMangasLoadRequested extends ProfileEvent {
+  final String userId;
+  const ProfileMangasLoadRequested(this.userId);
+}
+
+class ProfileMangaDeleted extends ProfileEvent {
+  final String mangaId;
+  const ProfileMangaDeleted(this.mangaId);
+}
 
 abstract class ProfileEvent extends Equatable {
   const ProfileEvent();

@@ -6,6 +6,7 @@ import 'package:appmanga/features/profile/domain/repositories/profile_repository
 import 'profile_event.dart';
 import 'profile_state.dart';
 
+
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final GetUserProfileUseCase getUserProfileUseCase;
   final UpdateProfileUseCase updateProfileUseCase;
@@ -19,6 +20,50 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<ProfileLoadRequested>(_onLoadRequested);
     on<ProfileFollowToggled>(_onFollowToggled);
     on<ProfileUpdateRequested>(_onUpdateRequested);
+    on<ProfileMangasLoadRequested>(_onMangasLoadRequested);
+    on<ProfileMangaDeleted>(_onMangaDeleted);
+  }
+  // Thêm 2 handler mới
+  Future<void> _onMangasLoadRequested(
+      ProfileMangasLoadRequested event,
+      Emitter<ProfileState> emit,
+      ) async {
+    if (state is! ProfileLoaded) return;
+    final current = state as ProfileLoaded;
+    emit(current.copyWith(isMangasLoading: true));
+
+    final result = await profileRepository.getUserMangas(event.userId);
+    result.fold(
+          (failure) => emit(current.copyWith(isMangasLoading: false)),
+          (mangas)  => emit(current.copyWith(
+        mangas         : mangas,
+        isMangasLoading: false,
+      )),
+    );
+  }
+
+  Future<void> _onMangaDeleted(
+      ProfileMangaDeleted event,
+      Emitter<ProfileState> emit,
+      ) async {
+    if (state is! ProfileLoaded) return;
+    final current = state as ProfileLoaded;
+    emit(current.copyWith(isDeletingManga: true));
+
+    final result = await profileRepository.deleteManga(event.mangaId);
+    result.fold(
+          (failure) => emit(current.copyWith(isDeletingManga: false)),
+          (_) {
+        // Xoá manga khỏi list local mà không cần reload
+        final updatedMangas = current.mangas
+            .where((m) => m.id != event.mangaId)
+            .toList();
+        emit(current.copyWith(
+          mangas         : updatedMangas,
+          isDeletingManga: false,
+        ));
+      },
+    );
   }
 
   Future<void> _onLoadRequested(

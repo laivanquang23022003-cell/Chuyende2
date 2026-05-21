@@ -63,6 +63,15 @@ import 'package:appmanga/features/notification/domain/usecases/get_unread_count_
 import 'package:appmanga/features/notification/domain/usecases/mark_read_usecase.dart';
 import 'package:appmanga/features/notification/domain/usecases/mark_all_read_usecase.dart';
 
+// Features - Points
+import 'package:appmanga/features/points/data/datasources/points_remote_datasource.dart';
+import 'package:appmanga/features/points/data/repositories/points_repository_impl.dart';
+import 'package:appmanga/features/points/domain/repositories/points_repository.dart';
+import 'package:appmanga/features/points/domain/usecases/get_tasks_usecase.dart';
+import 'package:appmanga/features/points/domain/usecases/complete_task_usecase.dart';
+import 'package:appmanga/features/points/domain/usecases/get_point_history_usecase.dart';
+import 'package:appmanga/features/points/presentation/bloc/points_bloc.dart';
+
 // Feature Blocs
 import 'package:appmanga/features/home/presentation/bloc/home_bloc.dart';
 import 'package:appmanga/features/explore/presentation/bloc/explore_bloc.dart';
@@ -157,6 +166,17 @@ Future<void> init() async {
   sl.registerLazySingleton(() => MarkReadUseCase(sl()));
   sl.registerLazySingleton(() => MarkAllReadUseCase(sl()));
 
+  // ── Points ──────────────────
+  sl.registerLazySingleton<PointsRemoteDataSource>(
+        () => PointsRemoteDataSourceImpl(sl()),
+  );
+  sl.registerLazySingleton<PointsRepository>(
+        () => PointsRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton(() => GetTasksUseCase(sl()));
+  sl.registerLazySingleton(() => CompleteTaskUseCase(sl()));
+  sl.registerLazySingleton(() => GetPointHistoryUseCase(sl()));
+
   // ── Blocs ─────────────────────────────
   sl.registerFactory(
     () => AuthBloc(
@@ -198,6 +218,13 @@ Future<void> init() async {
   sl.registerFactory(() => BookmarksBloc(mangaRepository: sl()));
   sl.registerFactory(() => HistoryBloc(repository: sl()));
   sl.registerFactory(() => CommentBloc(mangaRepository: sl()));
+
+  sl.registerFactory(() => PointsBloc(
+    getTasksUseCase       : sl(),
+    completeTaskUseCase   : sl(),
+    getPointBalanceUseCase: sl(),
+    getPointHistoryUseCase: sl(),
+  ));
 
   sl.registerLazySingleton(() => NotificationBloc(
     repository: sl(),

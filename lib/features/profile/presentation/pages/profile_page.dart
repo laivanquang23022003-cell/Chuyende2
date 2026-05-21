@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:appmanga/features/profile/domain/entities/creator_manga_entity.dart';
+import 'package:appmanga/features/profile/presentation/bloc/profile_event.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,7 +11,6 @@ import 'package:appmanga/core/theme/app_colors.dart';
 import 'package:appmanga/core/utils/format_helper.dart';
 import 'package:appmanga/features/profile/domain/entities/profile_entity.dart';
 import '../bloc/profile_bloc.dart';
-import '../bloc/profile_event.dart';
 import '../bloc/profile_state.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -152,7 +153,7 @@ class _ProfileContentState extends State<_ProfileContent>
           ? TabBarView(
         controller: _tabController,
         children: [
-          _MangaGridTab(userId: profile.id),
+          _MangaGridTab(userId: profile.id, isOwnProfile: profile.isOwnProfile),
           _StatusTab(userId: profile.id),
         ],
       )
@@ -541,25 +542,329 @@ class _ProfileContentState extends State<_ProfileContent>
 }
 
 // ── Tab: Manga Grid ────────────────────────────────────
-class _MangaGridTab extends StatelessWidget {
+class _MangaGridTab extends StatefulWidget {
   final String userId;
-  const _MangaGridTab({required this.userId});
+  final bool isOwnProfile;
+  const _MangaGridTab({
+    required this.userId,
+    required this.isOwnProfile,
+  });
+
+  @override
+  State<_MangaGridTab> createState() => _MangaGridTabState();
+}
+
+class _MangaGridTabState extends State<_MangaGridTab> {
+  @override
+  void initState() {
+    super.initState();
+    // Load mangas khi tab được tạo
+    context.read<ProfileBloc>().add(
+      ProfileMangasLoadRequested(widget.userId),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // TODO: kết nối API GET /api/users/:id/manga
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.library_books_outlined,
-              size: 56, color: AppColors.darkText3),
-          SizedBox(height: 12),
-          Text('Chưa có truyện nào',
-              style: TextStyle(color: AppColors.darkText3, fontSize: 14)),
+    return BlocBuilder<ProfileBloc, ProfileState>(
+      builder: (context, state) {
+        if (state is! ProfileLoaded) return const SizedBox();
+
+        if (state.isMangasLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.red),
+          );
+        }
+
+        return Stack(
+          children: [
+            state.mangas.isEmpty
+                ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.library_books_outlined,
+                      size: 56, color: AppColors.darkText3),
+                  SizedBox(height: 12),
+                  Text('Chưa có truyện nào',
+                      style: TextStyle(
+                        color: AppColors.darkText3,
+                        fontSize: 14,
+                      )),
+                ],
+              ),
+            )
+                : GridView.builder(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
+              gridDelegate:
+              const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount  : 2,
+                childAspectRatio: 0.62,
+                crossAxisSpacing: 10,
+                mainAxisSpacing : 10,
+              ),
+              itemCount  : state.mangas.length,
+              itemBuilder: (context, index) {
+                final manga = state.mangas[index];
+                return _CreatorMangaCard(
+                  manga       : manga,
+                  isOwn       : widget.isOwnProfile,
+                  onEdit      : () => context.push(
+                    '/manga/${manga.id}',
+                  ),
+                  onDelete    : () => _confirmDelete(
+                    context, manga,
+                  ),
+                );
+              },
+            ),
+
+            // Nút thêm truyện (chỉ khi là profile mình)
+            if (widget.isOwnProfile)
+              Positioned(
+                bottom: 16,
+                right : 16,
+                child : FloatingActionButton.extended(
+                  backgroundColor: AppColors.red,
+                  icon           : const Icon(Icons.add, color: Colors.white),
+                  label          : const Text(
+                    'Thêm truyện',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () async {
+                    // Navigate sang trang tạo manga
+                    final result = await context.push('/creator/manga/new');
+                    // Reload sau khi tạo xong
+                    if (result == true && context.mounted) {
+                      context.read<ProfileBloc>().add(
+                        ProfileMangasLoadRequested(widget.userId),
+                      );
+                    }
+                  },
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _confirmDelete(BuildContext context, CreatorMangaEntity manga) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.darkBg2,
+        title  : const Text('Xoá truyện?',
+            style: TextStyle(color: AppColors.darkText)),
+        content: Text(
+          'Bạn có chắc muốn xoá "${manga.title}"?\n'
+              'Toàn bộ chapter và trang sẽ bị xoá vĩnh viễn.',
+          style: const TextStyle(color: AppColors.darkText2),
+        ),
+        actions: [
+          TextButton(
+            child    : const Text('Huỷ',
+                style: TextStyle(color: AppColors.darkText3)),
+            onPressed: () => Navigator.pop(context),
+          ),
+          TextButton(
+            child    : const Text('Xoá',
+                style: TextStyle(color: AppColors.red,
+                    fontWeight: FontWeight.bold)),
+            onPressed: () {
+              Navigator.pop(context);
+              context.read<ProfileBloc>().add(
+                ProfileMangaDeleted(manga.id),
+              );
+            },
+          ),
         ],
       ),
     );
+  }
+}
+
+// ── Creator Manga Card ─────────────────────────────────
+class _CreatorMangaCard extends StatelessWidget {
+  final CreatorMangaEntity manga;
+  final bool isOwn;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _CreatorMangaCard({
+    required this.manga,
+    required this.isOwn,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push('/manga/${manga.id}'),
+      child: Container(
+        decoration: BoxDecoration(
+          color       : AppColors.darkBg2,
+          borderRadius: BorderRadius.circular(10),
+          border      : Border.all(
+            color: Colors.white.withOpacity(0.05),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Ảnh bìa
+            Expanded(
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(10),
+                    ),
+                    child: manga.coverUrl != null
+                        ? CachedNetworkImage(
+                      imageUrl  : manga.coverUrl!,
+                      width     : double.infinity,
+                      fit       : BoxFit.cover,
+                      errorWidget: (_, __, ___) => Container(
+                        color: AppColors.darkBg3,
+                        child: const Icon(Icons.broken_image,
+                            color: Colors.white38),
+                      ),
+                    )
+                        : Container(
+                      color: AppColors.darkBg3,
+                      child: const Icon(Icons.image_not_supported,
+                          color: Colors.white38),
+                    ),
+                  ),
+                  // Icon sửa + xoá (chỉ khi là của mình)
+                  if (isOwn)
+                    Positioned(
+                      top  : 6,
+                      right: 6,
+                      child: Row(
+                        children: [
+                          // Nút sửa
+                          GestureDetector(
+                            onTap: onEdit,
+                            child: Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color : Colors.black.withOpacity(0.65),
+                                shape : BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.edit,
+                                  size: 14, color: Colors.white),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          // Nút xoá
+                          GestureDetector(
+                            onTap: onDelete,
+                            child: Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color : Colors.red.withOpacity(0.8),
+                                shape : BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.delete,
+                                  size: 14, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  // Status badge góc dưới trái
+                  Positioned(
+                    bottom: 6,
+                    left  : 6,
+                    child : Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color       : _statusColor(manga.status)
+                            .withOpacity(0.85),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        _statusText(manga.status),
+                        style: const TextStyle(
+                          fontSize  : 9,
+                          color     : Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Tên + thống kê
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    manga.title,
+                    style: const TextStyle(
+                      fontSize  : 12,
+                      fontWeight: FontWeight.bold,
+                      color     : AppColors.darkText,
+                    ),
+                    maxLines : 2,
+                    overflow : TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.menu_book,
+                          size: 11, color: AppColors.darkText3),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${manga.chapterCount} ch',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color   : AppColors.darkText3,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.remove_red_eye,
+                          size: 11, color: AppColors.darkText3),
+                      const SizedBox(width: 3),
+                      Text(
+                        FormatHelper.compactNumber(manga.viewCount),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color   : AppColors.darkText3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'completed': return Colors.green;
+      case 'hiatus'   : return Colors.orange;
+      default         : return AppColors.red;
+    }
+  }
+
+  String _statusText(String status) {
+    switch (status) {
+      case 'completed': return 'Hoàn thành';
+      case 'hiatus'   : return 'Tạm dừng';
+      default         : return 'Đang ra';
+    }
   }
 }
 

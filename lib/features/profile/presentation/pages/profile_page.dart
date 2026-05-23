@@ -610,7 +610,7 @@ class _MangaGridTabState extends State<_MangaGridTab> {
                   manga       : manga,
                   isOwn       : widget.isOwnProfile,
                   onEdit      : () => context.push(
-                    '/manga/${manga.id}',
+                    '/creator/chapter/new?mangaId=${manga.id}',
                   ),
                   onDelete    : () => _confirmDelete(
                     context, manga,
@@ -628,12 +628,12 @@ class _MangaGridTabState extends State<_MangaGridTab> {
                   backgroundColor: AppColors.red,
                   icon           : const Icon(Icons.add, color: Colors.white),
                   label          : const Text(
-                    'Thêm truyện',
+                    'Thêm Chapter',
                     style: TextStyle(color: Colors.white),
                   ),
                   onPressed: () async {
                     // Navigate sang trang tạo manga
-                    final result = await context.push('/creator/manga/new');
+                    final result = await context.push('/creator/chapter/new');
                     // Reload sau khi tạo xong
                     if (result == true && context.mounted) {
                       context.read<ProfileBloc>().add(

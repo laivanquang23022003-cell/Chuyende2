@@ -1,3 +1,5 @@
+import 'package:appmanga/features/manga/domain/entities/manga_entity.dart';
+import 'package:appmanga/features/manga/domain/usecases/create_chapter_usecase.dart';
 import 'package:dartz/dartz.dart';
 import 'package:appmanga/core/error/failures.dart';
 import '../entities/home_data_entity.dart';
@@ -10,6 +12,7 @@ import '../../../comment/domain/entities/comment_entity.dart';
 
 abstract class MangaRepository {
   Future<Either<Failure, HomeDataEntity>> getHomeData();
+
   
   Future<Either<Failure, MangaListEntity>> getMangaList({
     int page = 1,
@@ -19,6 +22,13 @@ abstract class MangaRepository {
     String sort = 'latest',
     String? search,
   });
+  // Thêm vào abstract class MangaRepository
+  Future<Either<Failure, void>> createChapter(
+      CreateChapterParams params,
+      );
+  Future<Either<Failure, List<MangaEntity>>> getMangasByAuthor(
+      String authorId,
+      );
 
   Future<Either<Failure, MangaListEntity>> searchManga({
     required String query,
@@ -56,4 +66,5 @@ abstract class MangaRepository {
   Future<Either<Failure, void>> deleteComment(String commentId);
   Future<Either<Failure, void>> likeComment(String commentId);
   Future<Either<Failure, void>> unlikeComment(String commentId);
+
 }

@@ -40,4 +40,9 @@ class ApiConstants {
   // Premium endpoints
   static const String premiumStatus = '/premium/status';
   static const String premiumPlans = '/premium/plans';
+
+  // Thêm vào cuối class ApiConstants
+  static const String chapters    = '/chapters';
+  static const String uploadPages = '/upload/pages';
+  static const String uploadCover = '/upload/cover';
 }

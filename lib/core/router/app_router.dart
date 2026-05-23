@@ -1,3 +1,6 @@
+import 'package:appmanga/core/storage/local_storage.dart';
+import 'package:appmanga/features/creator/presentation/bloc/create_chapter_bloc.dart';
+import 'package:appmanga/features/creator/presentation/pages/create_chapter_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -52,6 +55,23 @@ class AppRouter {
       GoRoute(
         path: '/search',
         builder: (context, state) => const SearchPage(),
+      ),
+      GoRoute(
+        path   : '/creator/chapter/new',
+        builder: (context, state) {
+          final mangaId = state.uri.queryParameters['mangaId'];
+          return BlocProvider(
+            create: (_) {
+              final bloc = sl<CreateChapterBloc>();
+              // Load danh sách manga của author
+              final userId = sl<LocalStorage>().getUserId() ?? '';
+                bloc.add(CreateChapterMangasLoaded(userId));
+              // Nếu có preselectedMangaId thì tự chọn
+              return bloc;
+            },
+            child: CreateChapterPage(preselectedMangaId: mangaId),
+          );
+        },
       ),
       GoRoute(
         path: '/manga/:id',

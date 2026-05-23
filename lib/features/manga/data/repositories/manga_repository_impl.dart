@@ -1,3 +1,5 @@
+import 'package:appmanga/features/manga/domain/entities/manga_entity.dart';
+import 'package:appmanga/features/manga/domain/usecases/create_chapter_usecase.dart';
 import 'package:dartz/dartz.dart';
 import 'package:appmanga/core/error/error_handler.dart';
 import 'package:appmanga/core/error/failures.dart';
@@ -25,6 +27,47 @@ class MangaRepositoryImpl implements MangaRepository {
 
   // Helper để ép kiểu an toàn
   int _safeInt(dynamic value) => MangaModel.toInt(value);
+
+  @override
+  Future<Either<Failure, void>> createChapter(
+      CreateChapterParams params,
+      ) async {
+    try {
+      // Bước 1: Tạo chapter
+      final chapter = await _remote.createChapter(
+        params.mangaId,
+        chapterNumber : params.chapterNumber,
+        title         : params.title,
+        isLocked      : params.isLocked,
+        unlockCost    : params.unlockCost,
+        isPremiumOnly : params.isPremiumOnly,
+      );
+      // Bước 2: Thêm pages vào chapter vừa tạo
+      if (params.imageUrls.isNotEmpty) {
+        await _remote.addPagesToChapter(
+          chapter['id'],
+          params.imageUrls,
+        );
+      }
+      return const Right(null);
+    } catch (e) {
+      return Left(ErrorHandler.handle(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<MangaEntity>>> getMangasByAuthor(
+      String authorId,
+      ) async {
+    try {
+      final result = await _remote.getMangasByAuthor(authorId);
+      return Right(result.map((e) =>
+          MangaModel.fromJson(e as Map<String, dynamic>)
+      ).toList());
+    } catch (e) {
+      return Left(ErrorHandler.handle(e));
+    }
+  }
 
   @override
   Future<Either<Failure, HomeDataEntity>> getHomeData() async {

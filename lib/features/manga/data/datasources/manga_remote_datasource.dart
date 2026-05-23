@@ -14,6 +14,20 @@ abstract class MangaRemoteDataSource {
     String sort = 'latest',
     String? search,
   });
+  // Thêm vào abstract class
+  Future<Map<String, dynamic>> createChapter(
+      String mangaId, {
+        required int chapterNumber,
+        String? title,
+        bool isLocked = false,
+        int unlockCost = 0,
+        bool isPremiumOnly = false,
+      });
+  Future<void> addPagesToChapter(
+      String chapterId,
+      List<String> imageUrls,
+      );
+  Future<List<dynamic>> getMangasByAuthor(String authorId);
   Future<MangaDetailModel> getMangaDetail(String id);
   Future<dynamic> getChapterPages(String id);
   Future<void> likeManga(String mangaId);
@@ -40,6 +54,52 @@ class MangaRemoteDataSourceImpl implements MangaRemoteDataSource {
   final DioClient _dioClient;
 
   MangaRemoteDataSourceImpl(this._dioClient);
+  @override
+  Future<Map<String, dynamic>> createChapter(
+      String mangaId, {
+        required int chapterNumber,
+        String? title,
+        bool isLocked = false,
+        int unlockCost = 0,
+        bool isPremiumOnly = false,
+      }) async {
+    final response = await _dioClient.dio.post(
+      '${ApiConstants.manga}/$mangaId/chapters',
+      data: {
+        'chapter_number'  : chapterNumber,
+        if (title != null) 'title': title,
+        'is_locked'       : isLocked,
+        'unlock_cost'     : unlockCost,
+        'is_premium_only' : isPremiumOnly,
+      },
+    );
+    return response.data['data'];
+  }
+
+  @override
+  Future<void> addPagesToChapter(
+      String chapterId,
+      List<String> imageUrls,
+      ) async {
+    await _dioClient.dio.post(
+      '${ApiConstants.chapters}/$chapterId/pages',
+      data: {
+        'pages': imageUrls.asMap().entries.map((e) => {
+          'page_number': e.key + 1,
+          'image_url'  : e.value,
+        }).toList(),
+      },
+    );
+  }
+
+  @override
+  Future<List<dynamic>> getMangasByAuthor(String authorId) async {
+    final response = await _dioClient.dio.get(
+      '/users/$authorId/manga',
+      queryParameters: {'limit': 100},
+    );
+    return response.data['data'] ?? [];
+  }
 
   @override
   Future<HomeDataModel> getHomeData() async {

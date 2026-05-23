@@ -1,4 +1,7 @@
-import 'package:dio/dio.dart';
+import 'package:appmanga/features/creator/presentation/bloc/create_chapter_bloc.dart';
+import 'package:appmanga/features/manga/data/datasources/upload_remote_datasource.dart';
+import 'package:appmanga/features/manga/domain/usecases/create_chapter_usecase.dart';
+import 'package:appmanga/features/manga/domain/usecases/get_mangas_by_author_usecase.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -120,6 +123,10 @@ Future<void> init() async {
   sl.registerLazySingleton<MangaRepository>(
     () => MangaRepositoryImpl(sl()),
   );
+  // Đăng ký UploadRemoteDataSource nếu chưa có
+  sl.registerLazySingleton<UploadRemoteDataSource>(
+        () => UploadRemoteDataSourceImpl(sl()),
+  );
   
   sl.registerLazySingleton(() => GetHomeDataUseCase(sl()));
   sl.registerLazySingleton(() => GetMangaListUseCase(sl()));
@@ -141,6 +148,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DeleteCommentUseCase(sl()));
   sl.registerLazySingleton(() => LikeCommentUseCase(sl()));
   sl.registerLazySingleton(() => UnlikeCommentUseCase(sl()));
+  // Thêm vào hàm init() sau phần đăng ký manga usecases
+  sl.registerLazySingleton(() => CreateChapterUseCase(sl()));
+  sl.registerLazySingleton(() => GetMangasByAuthorUseCase(sl()));
 
   // ── Profile ──────────────────
   sl.registerLazySingleton<ProfileRemoteDataSource>(
@@ -229,5 +239,11 @@ Future<void> init() async {
   sl.registerLazySingleton(() => NotificationBloc(
     repository: sl(),
     socketClient: sl(),
+  ));
+
+  sl.registerFactory(() => CreateChapterBloc(
+    getMangasByAuthorUseCase: sl(),
+    createChapterUseCase    : sl(),
+    uploadDataSource        : sl(),
   ));
 }
